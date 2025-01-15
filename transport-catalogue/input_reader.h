@@ -40,5 +40,7 @@ namespace Transport
         private:
             std::vector<CommandDescription> commands_;
         };
+
+        void Test(Transport::Data::TransportCatalogue& catalogue);
     }
 }
