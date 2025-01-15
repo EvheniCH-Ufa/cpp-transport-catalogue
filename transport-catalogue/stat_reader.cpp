@@ -44,7 +44,7 @@ namespace Transport
                 }
                 else
                 {
-                    auto buses_this_stop = find_stop->GetBuses();
+                    const auto& buses_this_stop = find_stop->GetBuses();
                     if (buses_this_stop.empty())
                     {
                         output << "no buses\n"s;
@@ -62,14 +62,14 @@ namespace Transport
             }
         }
 
-        void Test(Transport::Data::TransportCatalogue& catalogue)
+        void Test(std::istream& input, std::ostream& output, Transport::Data::TransportCatalogue& catalogue) // (std::istream&, std::ostream&)
         {
             int stat_request_count;
-            std::cin >> stat_request_count >> std::ws;
+            input >> stat_request_count >> std::ws;
             for (int i = 0; i < stat_request_count; ++i) {
                 std::string line;
-                std::getline(std::cin, line);
-                Transport::PrintCataloge::ParseAndPrintStat(catalogue, line, std::cout);
+                std::getline(input, line);
+                Transport::PrintCataloge::ParseAndPrintStat(catalogue, line, output);
             }
         }
     }
