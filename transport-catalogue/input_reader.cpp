@@ -131,16 +131,16 @@ namespace Transport
             }
         }
 
-        void Test(Transport::Data::TransportCatalogue& catalogue)
+        void Test(std::istream& input, Transport::Data::TransportCatalogue& catalogue)
         {
             int base_request_count;
-            std::cin >> base_request_count >> std::ws;
+            input >> base_request_count >> std::ws;
             InputReader reader;
 
             for (int i = 0; i < base_request_count; ++i)
             {
                 std::string line;
-                std::getline(std::cin, line);
+                std::getline(input, line);
                 reader.ParseLine(line);
             }
             reader.ApplyCommands(catalogue);
