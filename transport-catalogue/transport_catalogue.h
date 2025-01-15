@@ -9,8 +9,6 @@
 
 #include "geo.h"
 
-
-
 namespace Transport
 {
 	namespace Data
