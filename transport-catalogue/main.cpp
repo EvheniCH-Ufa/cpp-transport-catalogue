@@ -6,11 +6,9 @@
 #include "input_reader.h"
 #include "stat_reader.h"
 
-using namespace std;
-
 int main() {
     Transport::Data::TransportCatalogue catalogue;
 
-    Transport::InputCataloge::Test(catalogue);
-    Transport::PrintCataloge::Test(catalogue);
+    Transport::InputCataloge::Test(std::cin, catalogue);
+    Transport::PrintCataloge::Test(std::cin, std::cout, catalogue);
 }
