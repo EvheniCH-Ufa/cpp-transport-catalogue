@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <iterator>
 
 namespace Transport
@@ -128,6 +129,21 @@ namespace Transport
                 std::vector<std::string_view> route = ParseRoute(command.description);
                 catalogue.AddBus(command.id, route);
             }
+        }
+
+        void Test(Transport::Data::TransportCatalogue& catalogue)
+        {
+            int base_request_count;
+            std::cin >> base_request_count >> std::ws;
+            InputReader reader;
+
+            for (int i = 0; i < base_request_count; ++i)
+            {
+                std::string line;
+                std::getline(std::cin, line);
+                reader.ParseLine(line);
+            }
+            reader.ApplyCommands(catalogue);
         }
     }
 }
