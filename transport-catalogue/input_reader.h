@@ -1,4 +1,6 @@
 #pragma once
+
+#include <istream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -41,6 +43,6 @@ namespace Transport
             std::vector<CommandDescription> commands_;
         };
 
-        void Test(Transport::Data::TransportCatalogue& catalogue);
+        void Test(std::istream& input, Transport::Data::TransportCatalogue& catalogue);
     }
 }
