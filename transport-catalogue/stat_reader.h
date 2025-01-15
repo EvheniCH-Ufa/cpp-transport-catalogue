@@ -12,6 +12,6 @@ namespace Transport
         void ParseAndPrintStat(const Transport::Data::TransportCatalogue& tansport_catalogue, std::string_view request,
             std::ostream& output);
 
-        void Test(Transport::Data::TransportCatalogue& catalogue);
+        void Test(std::istream& input, std::ostream& output, Transport::Data::TransportCatalogue& catalogue);
     }
 }
