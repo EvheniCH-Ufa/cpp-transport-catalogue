@@ -6,7 +6,7 @@ namespace Transport
 {
 	namespace Data
 	{
-		void TransportCatalogue::AddBus(const std::string& bus_name, std::vector<std::string_view>& stops_names)
+		void TransportCatalogue::AddBus(const std::string& bus_name, const std::vector<std::string_view>& stops_names)
 		{
 			std::string name;
 			std::vector<Stop*> current_bus_stops;
@@ -19,12 +19,8 @@ namespace Transport
 
 			for (auto stop_name : stops_names) // probeg po ostanovkam
 			{   // find stop
-				auto it_find = std::find_if(stops_for_find_.begin(), stops_for_find_.end(),
-					[stop_name](std::pair< std::string* const, Stop* >& val)
-					{
-						return stop_name == *val.first;
-					});
 
+				auto it_find = stops_for_find_.find(stop_name);
 				if (it_find == stops_for_find_.end())
 				{
 					continue;
@@ -47,12 +43,12 @@ namespace Transport
 
 			// ptr for new bus in dec 
 			auto last_bus = &(buses_.back());
-			buses_for_find_.insert({ &((buses_.back()).name), last_bus });
+			buses_for_find_.insert({ last_bus->name, last_bus });
 
 			// for all stops this bus add ptr new bus 
 			for (auto stop : uniq_stops)
 			{
-				(*stop).buses.push_back(last_bus);
+				(*stop).buses.insert(bus_name);
 			}
 		}
 
@@ -60,17 +56,12 @@ namespace Transport
 		{
 			Stop stop = { stop_name, coordinates };
 			stops_.push_back(std::move(stop));
-
-			stops_for_find_.insert({ &(stops_.back().name), &(stops_.back()) });
+			stops_for_find_.insert({ stops_.back().name, &(stops_.back()) }); // можжет тут быть
 		}
 
 		const Bus* TransportCatalogue::GetBus(std::string_view bus_name) const
 		{
-			auto find_it = std::find_if(buses_for_find_.begin(), buses_for_find_.end(),
-				[bus_name](const std::pair< std::string* const, Bus* >& val)
-				{
-					return bus_name == *val.first;
-				});
+			auto find_it = buses_for_find_.find(bus_name);
 			if (find_it != buses_for_find_.end())
 			{
 				return find_it->second;
@@ -80,12 +71,7 @@ namespace Transport
 
 		const Stop* TransportCatalogue::GetStop(std::string_view stop_name) const
 		{
-			auto it_find = std::find_if(stops_for_find_.begin(), stops_for_find_.end(),
-				[stop_name](const std::pair< std::string* const, Stop* >& val)
-				{
-					return stop_name == *val.first;
-				});
-
+			auto it_find = stops_for_find_.find(stop_name);
 			if (it_find != stops_for_find_.end())
 			{
 				return it_find->second;
@@ -93,7 +79,7 @@ namespace Transport
 			return nullptr;
 		}
 
-		const std::vector<Bus*>& Stop::GetBuses() const
+		const std::set<std::string>& Stop::GetBuses() const
 		{
 			return buses;
 		}
