@@ -9,11 +9,19 @@
 
 #include "geo.h"
 
+
+
 namespace Transport
 {
 	namespace Data
 	{
 		struct Bus;
+
+		struct RouteLength
+		{
+			double geo = 0.0;
+			int street = 0;
+		};
 
 		struct Stop
 		{
@@ -27,7 +35,7 @@ namespace Transport
 		{
 			std::string name;
 			std::vector<Stop*> stops;
-			double route_length;
+			RouteLength route_length;
 			size_t unique_stop_count;
 		};
 
@@ -40,13 +48,19 @@ namespace Transport
 			void AddStop(const std::string& stop_name, Coordinates coordinates); //name + shirota + dolgota
 			const Bus* GetBus(std::string_view bus_name) const;
 			const Stop* GetStop(std::string_view stop_name) const;
+			void AddLenBetweenStops(std::string_view stop_from, std::string_view stop_to, int length);
+			int GetLenBetweenStops(const std::string& stop_from, const std::string& stop_to) const;
+
 
 		private:
+			const std::string ___TO___ = "___to___";
+
 			std::deque<Bus> buses_;
 			std::deque<Stop> stops_;
 
 			std::unordered_map <std::string_view, Bus*> buses_for_find_;
 			std::unordered_map <std::string_view, Stop*> stops_for_find_;
+			std::unordered_map<std::string, int> lengths_between_stops_;
 		};
 	}
 }
