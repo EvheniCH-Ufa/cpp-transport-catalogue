@@ -30,6 +30,52 @@ namespace Transport
             return { lat, lng };
         }
 
+
+        // Parse  55.574371, 37.6517, 7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam
+        // to     55.574371, 37.6517
+        // and    7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam
+        std::pair<std::string_view, std::string_view> ParseStopDescription(std::string_view str) {
+            auto not_space = str.find_first_not_of(' ');
+            auto comma = str.find(',');        //find first ','
+            comma = str.find(',', comma + 1);  //find second ','
+
+            if (comma == str.npos) {
+                return { str, str.substr(0,0) };
+            }
+
+            auto not_space2 = str.find_first_not_of(' ', comma + 1);
+            return { str.substr(not_space, comma - not_space), str.substr(not_space2) };
+        }
+
+        // Parse  "7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam"
+        // to {{"current", "Rossoshanskaya ulitsa", 7500}, {"current", "Biryusinka", 1800}, {"current", "Universam", 2400}}
+        void ParseLenToStopDescription(Transport::Data::TransportCatalogue& catalogue, std::string_view current_stop, std::string_view str) {
+            if (str.empty())
+            {
+                return;
+            }
+
+            size_t base = 0;
+            while (true)
+            {
+                auto not_space = str.find_first_not_of(' ', base);
+                auto m_char_pos = str.find('m', not_space);
+                auto to_char_pos = str.find("to ", m_char_pos);
+                auto not_space2 = str.find_first_not_of(' ', to_char_pos + 3);
+                auto comma = str.find(',', not_space2 + 1);
+
+                catalogue.AddLenBetweenStops(current_stop, str.substr(not_space2, comma - not_space2), std::stoi(std::string(str.substr(not_space, m_char_pos - not_space))));
+                if (comma == std::string::npos)
+                {
+                    break;
+                }
+                base = comma + 1;
+            }
+        }
+
+
+
+
         /**
          * Удаляет пробелы в начале и конце строки
          */
@@ -110,13 +156,20 @@ namespace Transport
         void InputReader::ApplyCommands([[maybe_unused]] Transport::Data::TransportCatalogue& catalogue) const {
             // Реализуйте метод самостоятельно
             // first - commands whitch add stops
+
+            std::vector<std::tuple<std::string_view, std::string_view, int>> lengths_for_write;
+            lengths_for_write.reserve(commands_.size());
+
             for (auto& command : commands_)
             {
                 if (command.command != "Stop")
                 {
                     continue;
                 }
-                catalogue.AddStop(command.id, ParseCoordinates(command.description));
+                
+                auto [coordinates_description, len_to_stops_description] = ParseStopDescription(command.description);
+                catalogue.AddStop(command.id, ParseCoordinates(coordinates_description));
+                ParseLenToStopDescription(catalogue, command.id, len_to_stops_description);  
             }
 
             // second - commands whitch add buses
