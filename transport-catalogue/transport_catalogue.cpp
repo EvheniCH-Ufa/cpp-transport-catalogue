@@ -12,8 +12,10 @@ namespace Transport
 			std::vector<Stop*> current_bus_stops;
 
 			Coordinates last_stop_coordinate;
+			std::string last_stop;
+
 			bool first_stop = true;
-			double route_len = 0.0;
+			RouteLength route_len;
 
 			std::unordered_set<Stop*> uniq_stops;
 
@@ -29,10 +31,12 @@ namespace Transport
 
 				if (!first_stop) // calculate route len
 				{
-					route_len += ComputeDistance(last_stop_coordinate, it_find->second->coordinates);
+					route_len.geo += ComputeDistance(last_stop_coordinate, it_find->second->coordinates);
+					route_len.street += GetLenBetweenStops(last_stop, std::string(stop_name));
 				}
 				first_stop = false;
 				last_stop_coordinate = it_find->second->coordinates;
+				last_stop = std::string(stop_name);
 
 				uniq_stops.insert(it_find->second);
 			}
@@ -78,6 +82,33 @@ namespace Transport
 			}
 			return nullptr;
 		}
+
+		void TransportCatalogue::AddLenBetweenStops(std::string_view stop_from, std::string_view stop_to, int length)
+		{
+			std::string key = std::string(stop_from) + ___TO___ + std::string(stop_to);
+			lengths_between_stops_[key] = length;
+		};
+
+		int TransportCatalogue::GetLenBetweenStops(const std::string& stop_from, const std::string& stop_to) const
+		{
+			std::string key = stop_from + ___TO___ + stop_to;
+			auto it_find = lengths_between_stops_.find(key);
+
+			if (it_find != lengths_between_stops_.end())
+			{
+				return it_find->second;
+			}
+
+			key = stop_to + ___TO___ + stop_from;
+			it_find = lengths_between_stops_.find(key);
+
+			if (it_find != lengths_between_stops_.end())
+			{
+				return it_find->second;
+			}
+
+			return 0;
+		};
 
 		const std::set<std::string>& Stop::GetBuses() const
 		{
