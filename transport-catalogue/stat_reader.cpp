@@ -29,7 +29,8 @@ namespace Transport
                 {
                     output << (*find_bus).stops.size() << " stops on route, "s
                         << (*find_bus).unique_stop_count << " unique stops, "s
-                        << std::setprecision(6) << (*find_bus).route_length << " route length\n"s;
+                        << (*find_bus).route_length.street << " route length, "s
+                        << std::setprecision(6) << (*find_bus).route_length.street/ (*find_bus).route_length.geo << " curvature\n"s;
                 }
                 return;
             }
