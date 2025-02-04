@@ -48,19 +48,27 @@ namespace Transport
 			void AddStop(const std::string& stop_name, Coordinates coordinates); //name + shirota + dolgota
 			const Bus* GetBus(std::string_view bus_name) const;
 			const Stop* GetStop(std::string_view stop_name) const;
-			void AddLenBetweenStops(std::string_view stop_from, std::string_view stop_to, int length);
-			int GetLenBetweenStops(const std::string& stop_from, const std::string& stop_to) const;
+			void AddDistBetweenStops(std::string_view stop_from, std::string_view stop_to, int length);
+			int GetDistBetweenStops(const std::string& stop_from, const std::string& stop_to) const;
 
 
 		private:
-			const std::string ___TO___ = "___to___";
-
 			std::deque<Bus> buses_;
 			std::deque<Stop> stops_;
 
 			std::unordered_map <std::string_view, Bus*> buses_for_find_;
 			std::unordered_map <std::string_view, Stop*> stops_for_find_;
-			std::unordered_map<std::string, int> lengths_between_stops_;
+
+
+			struct PairStringHash {
+				size_t  operator() (const std::pair<std::string, std::string>& pr) const {
+					return d_hasher_str(pr.first) + d_hasher_str(pr.first) * 37;
+				}
+			private:
+				std::hash<std::string> d_hasher_str;
+			};
+
+			std::unordered_map<std::pair<std::string, std::string>, int, PairStringHash> distance_between_stops_;
 		};
 	}
 }
