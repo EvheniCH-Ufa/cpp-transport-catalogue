@@ -31,10 +31,16 @@ namespace Transport
         }
 
 
+        struct StopCoordinateAndDistance {
+            std::string_view Coordinate;
+            std::string_view Distance;
+        };
+
+
         // Parse  55.574371, 37.6517, 7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam
         // to     55.574371, 37.6517
         // and    7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam
-        std::pair<std::string_view, std::string_view> ParseStopDescription(std::string_view str) {
+        StopCoordinateAndDistance ParseStopDescription(std::string_view str) {
             auto not_space = str.find_first_not_of(' ');
             auto comma = str.find(',');        //find first ','
             comma = str.find(',', comma + 1);  //find second ','
@@ -64,7 +70,7 @@ namespace Transport
                 auto not_space2 = str.find_first_not_of(' ', to_char_pos + 3);
                 auto comma = str.find(',', not_space2 + 1);
 
-                catalogue.AddLenBetweenStops(current_stop, str.substr(not_space2, comma - not_space2), std::stoi(std::string(str.substr(not_space, m_char_pos - not_space))));
+                catalogue.AddDistBetweenStops(current_stop, str.substr(not_space2, comma - not_space2), std::stoi(std::string(str.substr(not_space, m_char_pos - not_space))));
                 if (comma == std::string::npos)
                 {
                     break;
@@ -72,9 +78,6 @@ namespace Transport
                 base = comma + 1;
             }
         }
-
-
-
 
         /**
          * Удаляет пробелы в начале и конце строки
