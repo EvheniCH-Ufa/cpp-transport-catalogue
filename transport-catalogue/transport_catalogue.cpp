@@ -32,7 +32,7 @@ namespace Transport
 				if (!first_stop) // calculate route len
 				{
 					route_len.geo += ComputeDistance(last_stop_coordinate, it_find->second->coordinates);
-					route_len.street += GetLenBetweenStops(last_stop, std::string(stop_name));
+					route_len.street += GetDistBetweenStops(last_stop, std::string(stop_name));
 				}
 				first_stop = false;
 				last_stop_coordinate = it_find->second->coordinates;
@@ -83,26 +83,23 @@ namespace Transport
 			return nullptr;
 		}
 
-		void TransportCatalogue::AddLenBetweenStops(std::string_view stop_from, std::string_view stop_to, int length)
+		void TransportCatalogue::AddDistBetweenStops(std::string_view stop_from, std::string_view stop_to, int length)
 		{
-			std::string key = std::string(stop_from) + ___TO___ + std::string(stop_to);
-			lengths_between_stops_[key] = length;
+			distance_between_stops_[{std::string(stop_from), std::string(stop_to)}] = length;
 		};
 
-		int TransportCatalogue::GetLenBetweenStops(const std::string& stop_from, const std::string& stop_to) const
+		int TransportCatalogue::GetDistBetweenStops(const std::string& stop_from, const std::string& stop_to) const
 		{
-			std::string key = stop_from + ___TO___ + stop_to;
-			auto it_find = lengths_between_stops_.find(key);
+			auto it_find = distance_between_stops_.find({stop_from, stop_to});
 
-			if (it_find != lengths_between_stops_.end())
+			if (it_find != distance_between_stops_.end())
 			{
 				return it_find->second;
 			}
 
-			key = stop_to + ___TO___ + stop_from;
-			it_find = lengths_between_stops_.find(key);
+			it_find = distance_between_stops_.find({ stop_from, stop_to });
 
-			if (it_find != lengths_between_stops_.end())
+			if (it_find != distance_between_stops_.end())
 			{
 				return it_find->second;
 			}
