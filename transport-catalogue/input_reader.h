@@ -12,6 +12,7 @@ namespace Transport
 {
     namespace InputCataloge
     {
+
         struct CommandDescription {
             // Определяет, задана ли команда (поле command непустое)
             explicit operator bool() const {
