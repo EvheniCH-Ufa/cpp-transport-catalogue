@@ -1,14 +1,18 @@
-// p08_02_08_TransportnyjSpravochnik_PishemKod_3.cpp
+// p10_01_15_TransportnyjSpravochnik_VizualizacijaKartyMarshrutov.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
 
 #include <iostream>
+#include <string>
+#include <fstream>
 
-#include "input_reader.h"
-#include "stat_reader.h"
-#include "transport_catalogue.h"
+
+#include "json_reader.h"
+//#include "transport_catalogue.h"
+
 
 int main() {
     Transport::Data::TransportCatalogue catalogue;
-
     Transport::InputCataloge::Test(std::cin, catalogue);
-    Transport::PrintCataloge::Test(std::cin, std::cout, catalogue);
+
 }
+
+   
