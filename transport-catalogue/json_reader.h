@@ -19,45 +19,35 @@
 
 namespace Transport
 {
-    namespace InputCataloge
-    {
+    struct CommandDescription {
+        // Определяет, задана ли команда (поле command непустое)
+        explicit operator bool() const {
+            return !command.empty();
+        }
 
-        struct CommandDescription {
-            // Определяет, задана ли команда (поле command непустое)
-            explicit operator bool() const {
-                return !command.empty();
-            }
+        bool operator!() const {
+            return !operator bool();
+        }
 
-            bool operator!() const {
-                return !operator bool();
-            }
+        std::string command;      // Название команды
+        std::string id;           // id маршрута или остановки
+        std::string description;  // Параметры команды
+    };
 
-            std::string command;      // Название команды
-            std::string id;           // id маршрута или остановки
-            std::string description;  // Параметры команды
-        };
+    class JsonReader {
+    public:
+        JsonReader() = delete;
+        JsonReader(Transport::Data::TransportCatalogue& catalogue) : catalogue_(catalogue) {};
 
-        class InputReader {
-        public:
-            /**
-             * Парсит строку в структуру CommandDescription и сохраняет результат в commands_
-             */
-            void ParseLine(std::string_view line);
+        void ReadJson(std::istream& input);
 
-            /**
-             * Наполняет данными транспортный справочник, используя команды из commands_
-             */
-            void ApplyCommands(Transport::Data::TransportCatalogue& catalogue) const;
+    private:
+        std::vector<CommandDescription> commands_;
+        Transport::Data::TransportCatalogue& catalogue_;
 
-        private:
-            std::vector<CommandDescription> commands_;
-        };
-
-        void ApplyInsertJSONCommands([[maybe_unused]] Transport::Data::TransportCatalogue& catalogue, const json::Node& insert_array);
-        json::Document ApplyStatJSONCommands(Transport::Data::TransportCatalogue& catalogue, const json::Node& stat_array, const svg::Document& svg_document);
+        void ApplyInsertJSONCommands(const json::Node& insert_array);
+        json::Document ApplyStatJSONCommands(const json::Node& stat_array, const svg::Document& svg_document);
 
         map_render::RenderSettings ApplySettingsJSON(const json::Node& settings_array);
-
-        void Test(std::istream& input, Transport::Data::TransportCatalogue& catalogue);
-    } // namespace InputCataloge
+    };
 } // namespace Transport
