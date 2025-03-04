@@ -106,8 +106,32 @@ namespace map_render {
         double zoom_coeff_ = 0;
     };
 
-    void BusesRenderToDoc(svg::Document& document, const Transport::Data::TransportCatalogue& catalog, const RenderSettings& settings, const SphereProjector& zoom);
-    void StopsRenderToDoc(svg::Document& document, const Transport::Data::TransportCatalogue& catalog, const RenderSettings& settings, const SphereProjector& zoom);
 
-    void RenderToDoc(svg::Document& document, const Transport::Data::TransportCatalogue& catalog, const RenderSettings& settings);
+    class MapRenderer {
+    public:
+        MapRenderer() = delete;
+
+        MapRenderer(const Transport::Data::TransportCatalogue& catalog, const RenderSettings& settings)
+            : catalog_(catalog)
+            , settings_(settings)
+            , sphere_projector_(MakeSphereProjector()) {};
+
+        void RenderToSVGDoc(svg::Document& document);
+
+    private:
+        const Transport::Data::TransportCatalogue catalog_;
+        const RenderSettings settings_;
+        const SphereProjector sphere_projector_;
+
+        const SphereProjector MakeSphereProjector();
+
+        void BusesRenderToDoc(svg::Document& document);
+        void SetBusRouteSettings(svg::Polyline& route, const svg::Color& color);
+        const std::pair<svg::Point, svg::Point> MakeBusRoute(svg::Polyline& route, const Transport::Data::Bus& bus);
+
+        void StopsRenderToDoc(svg::Document& document);
+        void SetStopProperty(svg::Circle& stop_place, svg::Point point);
+
+
+    };
 } //map_render
