@@ -1,26 +1,21 @@
-﻿#include "json_reader.h"
-#include <fstream>
-#include <sstream>
-
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
  */
 
-#include "json_reader.h"
-#include "svg.h"
-
-
 #include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <iterator>
+#include <fstream>
+#include <sstream>
+
+#include "json_reader.h"
+#include "svg.h"
 
 namespace Transport
 {
-    namespace InputCataloge
-    {
-       void ApplyInsertJSONCommands([[maybe_unused]] Transport::Data::TransportCatalogue& catalogue, const json::Node& insert_array)
+       void JsonReader::ApplyInsertJSONCommands(const json::Node& insert_array)
        {
             for (const auto& node /*map_Ы*/ : insert_array.AsArray())
             {
@@ -30,12 +25,12 @@ namespace Transport
                     continue;
                 }
 
-                catalogue.AddStop(node.AsMap().at("name").AsString()
+                catalogue_.AddStop(node.AsMap().at("name").AsString()
                     , { node.AsMap().at("latitude").AsDouble(), node.AsMap().at("longitude").AsDouble() });
 
                 for (const auto& road_distances : node.AsMap().at("road_distances").AsMap())
                 {
-                    catalogue.AddDistBetweenStops(node.AsMap().at("name").AsString()
+                    catalogue_.AddDistBetweenStops(node.AsMap().at("name").AsString()
                         , road_distances.first, road_distances.second.AsInt());
                 }
             }
@@ -56,13 +51,13 @@ namespace Transport
                     route.push_back(node_whith_stop.AsString());
                 }
 
-                catalogue.AddBus(node.AsMap().at("name").AsString()
+                catalogue_.AddBus(node.AsMap().at("name").AsString()
                     , route
                     , node.AsMap().at("is_roundtrip").AsBool());
             }
         }
 
-         json::Document ApplyStatJSONCommands(Transport::Data::TransportCatalogue& catalogue, const json::Node& stat_array, const svg::Document& svg_document)
+         json::Document JsonReader::ApplyStatJSONCommands(const json::Node& stat_array, const svg::Document& svg_document)
         {
             json::Array result_aray;
             for (const auto& node /*map_Ы*/ : stat_array.AsArray())
@@ -88,7 +83,7 @@ namespace Transport
                     json::Dict current_map;
                     current_map.insert(std::map<std::string, int>::value_type("request_id", node.AsMap().at("id").AsInt()));
 
-                    const auto stop = catalogue.GetStop(node.AsMap().at("name").AsString());
+                    const auto stop = catalogue_.GetStop(node.AsMap().at("name").AsString());
                     if (stop == nullptr)
                     {
                         current_map.insert(std::map<std::string, std::string>::value_type("error_message", "not found"));
@@ -107,7 +102,7 @@ namespace Transport
                     json::Dict current_map;
                     current_map.insert(std::map<std::string, int>::value_type("request_id", node.AsMap().at("id").AsInt()));
 
-                    const auto bus = catalogue.GetBus(node.AsMap().at("name").AsString());
+                    const auto bus = catalogue_.GetBus(node.AsMap().at("name").AsString());
                     if (bus == nullptr)
                     {
                         current_map.insert(std::map<std::string, std::string>::value_type("error_message", "not found"));
@@ -173,7 +168,7 @@ namespace Transport
              }
          }
 
-         map_render::RenderSettings ApplySettingsJSON(const json::Node& settings_array)
+         map_render::RenderSettings JsonReader::ApplySettingsJSON(const json::Node& settings_array)
          {
              map_render::RenderSettings result;
 
@@ -206,27 +201,24 @@ namespace Transport
              return result;
          }
 
-
-        void Test(std::istream& input, Transport::Data::TransportCatalogue& catalogue)
+         void JsonReader::ReadJson(std::istream& input)
         {
             auto json_document = json::Load(input);
             auto base_requests = json_document.GetRequests("base_requests");
-            ApplyInsertJSONCommands(catalogue, base_requests);
-            //catalogue.GetStop("sd");
+            ApplyInsertJSONCommands(base_requests);
 
             auto render_requests = json_document.GetRequests("render_settings");
             map_render::RenderSettings settings = ApplySettingsJSON(render_requests);
-            svg::Document svg_document;
-            map_render::RenderToDoc(svg_document, catalogue, settings);
-            //svg_document.Render(std::cout);
 
+            svg::Document svg_document;
+            map_render::MapRenderer map_renderer(catalogue_, settings);
+            map_renderer.RenderToSVGDoc(svg_document);
 
             auto stat_requests = json_document.GetRequests("stat_requests");
-            auto ansver_array = ApplyStatJSONCommands(catalogue, stat_requests, svg_document);
+            auto ansver_array = ApplyStatJSONCommands(stat_requests, svg_document);
 
-          //  auto out_file = std::ofstream("my out.txt");
-          //  json::Print(ansver_array, out_file);
+          //  auto out_file = std::ofstream("my out.txt"); // для отладки
+          //  json::Print(ansver_array, out_file);         // для отладки
             json::Print(ansver_array, std::cout);
         }
-    } // namespace InputCataloge
 } // namespace Transport
