@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <iostream>
 #include <map>
@@ -23,7 +23,6 @@ namespace json {
     public:
         using NodeValue = std::variant<std::nullptr_t, std::string, int, double, bool, Array, Dict>;
         Node() = default;
-        Node(const NodeValue& value) : value_(value) {};
         Node(const std::string& value) : value_(value) {};
         Node(const int value) : value_(value) {};
         Node(const double value) : value_(value) {};
@@ -31,6 +30,7 @@ namespace json {
         Node(std::nullptr_t) : value_(nullptr) {};
         Node(const Array& value) : value_(value) {};
         Node(const Dict& value) : value_(value) {};
+        Node(const NodeValue& value) : value_(value) {};
 
         Node& operator=(NodeValue value)
         {
@@ -98,7 +98,6 @@ namespace json {
     {
         return ((left.GetRoot().GetValue().index() != right.GetRoot().GetValue().index()) || (left.GetRoot().GetValue() != right.GetRoot().GetValue()));
     }
-
 
     Document Load(std::istream& input);
 

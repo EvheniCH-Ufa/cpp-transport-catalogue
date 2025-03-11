@@ -1,11 +1,6 @@
-#pragma once
+﻿#pragma once
 
-/*
- * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
- * а также код обработки запросов к базе и формирование массива ответов в формате JSON
- */
-
-#pragma once
+#include "json.h"
 
 #include <istream>
 #include <string>
@@ -13,8 +8,8 @@
 #include <vector>
 
 #include "geo.h"
+#include "json_builder.h"
 #include "transport_catalogue.h"
-#include "json.h"
 #include "map_renderer.h"
 
 namespace Transport
@@ -46,7 +41,7 @@ namespace Transport
         Transport::Data::TransportCatalogue& catalogue_;
 
         void ApplyInsertJSONCommands(const json::Node& insert_array);
-        json::Document ApplyStatJSONCommands(const json::Node& stat_array, const svg::Document& svg_document);
+        json::Document ApplyStatJSONCommandsBuild(const json::Node& stat_array, const svg::Document& svg_document);
 
         map_render::RenderSettings ApplySettingsJSON(const json::Node& settings_array);
     };

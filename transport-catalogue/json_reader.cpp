@@ -1,7 +1,4 @@
-/*
- * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
- * а также код обработки запросов к базе и формирование массива ответов в формате JSON
- */
+﻿#include "json_reader.h"
 
 #include <algorithm>
 #include <cassert>
@@ -10,13 +7,12 @@
 #include <fstream>
 #include <sstream>
 
-#include "json_reader.h"
 #include "svg.h"
 
 namespace Transport
 {
-       void JsonReader::ApplyInsertJSONCommands(const json::Node& insert_array)
-       {
+        void JsonReader::ApplyInsertJSONCommands(const json::Node& insert_array)
+        {
             for (const auto& node /*map_Ы*/ : insert_array.AsArray())
             {
                 std::string command = node.AsMap().at("type").AsString();
@@ -57,89 +53,97 @@ namespace Transport
             }
         }
 
-         json::Document JsonReader::ApplyStatJSONCommands(const json::Node& stat_array, const svg::Document& svg_document)
+        json::Document JsonReader::ApplyStatJSONCommandsBuild(const json::Node& stat_array, const svg::Document& svg_document)
         {
-            json::Array result_aray;
-            for (const auto& node /*map_Ы*/ : stat_array.AsArray())
             {
-                std::string command = node.AsMap().at("type").AsString();
+                json::Builder builder;
 
-                if (command == "Map")
+                json::ArrayItemContext build_array_item_context = builder.StartArray();
+                json::Array result_aray;
+
+                for (const auto& node /*map_Ы*/ : stat_array.AsArray())
                 {
-                    json::Dict current_map;
 
-                    std::stringstream ss;
-                    svg_document.Render(ss);
-                    current_map.insert(std::map<std::string, std::string>::value_type("map", ss.str()));
-
-                    current_map.insert(std::map<std::string, int>::value_type("request_id", node.AsMap().at("id").AsInt()));
-                    result_aray.push_back(std::move(current_map));
-
-                    continue;
-                }
-
-                if (command == "Stop")
-                {
-                    json::Dict current_map;
-                    current_map.insert(std::map<std::string, int>::value_type("request_id", node.AsMap().at("id").AsInt()));
-
-                    const auto stop = catalogue_.GetStop(node.AsMap().at("name").AsString());
-                    if (stop == nullptr)
+                    std::string command = node.AsMap().at("type").AsString();
+                    if (command == "Map")
                     {
-                        current_map.insert(std::map<std::string, std::string>::value_type("error_message", "not found"));
+                        // тут фактически МАП с двумя записями: {"map" + сама карта} ,  {"request_id" + id }
+                        std::stringstream ss;
+                        svg_document.Render(ss);
+
+                        build_array_item_context.StartDict()
+                            .Key("map").Value(ss.str())
+                            .Key("request_id").Value(node.AsMap().at("id").AsInt())
+                            .EndDict();
+
+                        continue;
                     }
-                    else
-                    {
-                        current_map.insert(std::map<std::string
-                                , json::Array>::value_type("buses", json::Array(stop->buses.begin(), stop->buses.end())));
-                    }
-                    result_aray.push_back(std::move(current_map));
-                    continue;
-                }
 
-                if (command == "Bus")
-                {
-                    json::Dict current_map;
-                    current_map.insert(std::map<std::string, int>::value_type("request_id", node.AsMap().at("id").AsInt()));
-
-                    const auto bus = catalogue_.GetBus(node.AsMap().at("name").AsString());
-                    if (bus == nullptr)
+                    if (command == "Stop")
                     {
-                        current_map.insert(std::map<std::string, std::string>::value_type("error_message", "not found"));
-                    }
-                    else
-                    {
-                        size_t bus_stops;
-                        if (bus->is_roundtrip)
+                        auto current_map_builder = build_array_item_context.StartDict();
+                            
+                        current_map_builder.Key("request_id").Value(node.AsMap().at("id").AsInt());
+                        const auto stop = catalogue_.GetStop(node.AsMap().at("name").AsString());
+                        if (stop == nullptr)
                         {
-                            bus_stops = bus->stops.size();
+                            current_map_builder.Key("error_message").Value("not found"); 
                         }
                         else
                         {
-                            bus_stops = bus->stops.size() * 2 - 1;
+                            auto buses_array_builder = current_map_builder.Key("buses").StartArray();
+                            for (auto& bus : stop->buses)
+                            {
+                                buses_array_builder.Value(bus);
+                            }
+                            buses_array_builder.EndArray();
                         }
-
-                        current_map.insert(std::map<std::string
-                            , double>::value_type("curvature", 1.0 * bus->route_length.street / bus->route_length.geo));
-                        current_map.insert(std::map<std::string
-                            , int>::value_type("route_length", bus->route_length.street));
-                        current_map.insert(std::map<std::string
-                            , int>::value_type("stop_count", bus_stops));
-                        current_map.insert(std::map<std::string
-                            , int>::value_type("unique_stop_count", bus->unique_stop_count));
+                        current_map_builder.EndDict();
+                        continue;
                     }
-                    result_aray.push_back(std::move(current_map));
-                    continue;
+
+                    if (command == "Bus")
+                    {
+                        auto current_map_builder = build_array_item_context.StartDict();
+                        current_map_builder.Key("request_id").Value(node.AsMap().at("id").AsInt());
+
+                        json::Dict current_map;
+
+                        const auto bus = catalogue_.GetBus(node.AsMap().at("name").AsString());
+                        if (bus == nullptr)
+                        {
+                            current_map_builder.Key("error_message").Value("not found");
+                        }
+                        else
+                        {
+                            size_t bus_stops;
+                            if (bus->is_roundtrip)
+                            {
+                                bus_stops = bus->stops.size();
+                            }
+                            else
+                            {
+                                bus_stops = bus->stops.size() * 2 - 1;
+                            }
+                            current_map_builder.Key("curvature").Value(1.0 * bus->route_length.street / bus->route_length.geo);
+                            current_map_builder.Key("route_length").Value(bus->route_length.street);
+                            current_map_builder.Key("stop_count").Value((int)bus_stops);
+                            current_map_builder.Key("unique_stop_count").Value((int)bus->unique_stop_count);
+                        }
+                        current_map_builder.EndDict();
+
+                        continue;
+                    }
                 }
+                return json::Document(build_array_item_context.EndArray().Build());
             }
-             return json::Document(std::move(result_aray));
         }
 
          //    using Color = std::variant<std::string, svg::Rgb, svg::Rgba>;
          //                                         0           1         2     3       4     5      6
          //  using NodeValue = std::variant<std::nullptr_t, std::string, int, double, bool, Array, Dict>;
-         svg::Color ReadColor(const json::Node& color)
-         {
+        svg::Color ReadColor(const json::Node& color)
+        {
              svg::Color result;
              switch (color.GetValue().index())
              {
@@ -166,10 +170,10 @@ namespace Transport
                  }
              default: return svg::NoneColor;
              }
-         }
+        }
 
-         map_render::RenderSettings JsonReader::ApplySettingsJSON(const json::Node& settings_array)
-         {
+        map_render::RenderSettings JsonReader::ApplySettingsJSON(const json::Node& settings_array)
+        {
              map_render::RenderSettings result;
 
              result.BUS_LABEL_FONT_SIZE = settings_array.AsMap().at("bus_label_font_size").AsInt();
@@ -199,9 +203,9 @@ namespace Transport
              result.WIDTH = settings_array.AsMap().at("width").AsDouble();
 
              return result;
-         }
+        }
 
-         void JsonReader::ReadJson(std::istream& input)
+        void JsonReader::ReadJson(std::istream& input)
         {
             auto json_document = json::Load(input);
             auto base_requests = json_document.GetRequests("base_requests");
@@ -215,7 +219,7 @@ namespace Transport
             map_renderer.RenderToSVGDoc(svg_document);
 
             auto stat_requests = json_document.GetRequests("stat_requests");
-            auto ansver_array = ApplyStatJSONCommands(stat_requests, svg_document);
+            auto ansver_array = ApplyStatJSONCommandsBuild(stat_requests, svg_document);
 
           //  auto out_file = std::ofstream("my out.txt"); // для отладки
           //  json::Print(ansver_array, out_file);         // для отладки
