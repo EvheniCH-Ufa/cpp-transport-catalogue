@@ -7,6 +7,152 @@ namespace json
 	{
 		commands_stack_.emplace(JSONCommands::Build);
 	}
+
+	Builder& Builder::Value(std::string& value)
+	{
+		//	std::cout << "add Value " << value << std::endl;  // для отладки
+
+		if (!node_stack_.empty() && node_containers_stack_.empty())
+		{
+			throw std::logic_error("Object is finished!");
+		}
+
+		if (GetLastContType() == TypeLastCont::NONE)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+			return *this;
+		}
+
+		if (commands_stack_.top() != JSONCommands::Build
+			&& commands_stack_.top() != JSONCommands::KEY
+			&& commands_stack_.top() != JSONCommands::ARRAY)
+		{
+			throw std::logic_error("Wrong value!");
+		}
+
+		if (GetLastContType() == TypeLastCont::DICT)
+		{
+			commands_stack_.pop(); //delete coomand key
+
+			auto last_elem = node_stack_.top();
+			node_stack_.pop();
+
+			Node* node = new Node(std::move(value));
+			Dict dict;
+			dict[(*last_elem->AsMap().begin()).first] = std::move(*node);
+
+			Node* new_node = new Node(std::move(dict));
+			node_stack_.emplace(new_node);
+			delete last_elem;
+			return *this;
+		}
+
+		if (GetLastContType() == TypeLastCont::ARRAY)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+		}
+		return *this;
+	}
+
+	Builder& Builder::Value(int value)
+	{
+		//	std::cout << "add Value " << value << std::endl; // для отладки
+
+		if (!node_stack_.empty() && node_containers_stack_.empty())
+		{
+			throw std::logic_error("Object is finished!");
+		}
+
+		if (GetLastContType() == TypeLastCont::NONE)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+			return *this;
+		}
+
+		if (commands_stack_.top() != JSONCommands::Build
+			&& commands_stack_.top() != JSONCommands::KEY
+			&& commands_stack_.top() != JSONCommands::ARRAY)
+		{
+			throw std::logic_error("Wrong value!");
+		}
+
+		if (GetLastContType() == TypeLastCont::DICT)
+		{
+			commands_stack_.pop(); //delete coomand key
+
+			auto last_elem = node_stack_.top();
+			node_stack_.pop();
+
+			Node* node = new Node(std::move(value));
+			Dict dict;
+			dict[(*last_elem->AsMap().begin()).first] = std::move(*node);
+
+			Node* new_node = new Node(std::move(dict));
+			node_stack_.emplace(new_node);
+			delete last_elem;
+			return *this;
+		}
+
+		if (GetLastContType() == TypeLastCont::ARRAY)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+		}
+		return *this;
+	}
+
+	Builder& Builder::Value(double value)
+	{
+		//	std::cout << "add Value " << value << std::endl; // для отладки
+
+		if (!node_stack_.empty() && node_containers_stack_.empty())
+		{
+			throw std::logic_error("Object is finished!");
+		}
+
+		if (GetLastContType() == TypeLastCont::NONE)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+			return *this;
+		}
+
+		if (commands_stack_.top() != JSONCommands::Build
+			&& commands_stack_.top() != JSONCommands::KEY
+			&& commands_stack_.top() != JSONCommands::ARRAY)
+		{
+			throw std::logic_error("Wrong value!");
+		}
+
+
+		if (GetLastContType() == TypeLastCont::DICT)
+		{
+			commands_stack_.pop(); //delete coomand key
+
+			auto last_elem = node_stack_.top();
+			node_stack_.pop();
+
+			Node* node = new Node(std::move(value));
+			Dict dict;
+			dict[(*last_elem->AsMap().begin()).first] = std::move(*node);
+
+			Node* new_node = new Node(std::move(dict));
+			node_stack_.emplace(new_node);
+			delete last_elem;
+			return *this;
+		}
+
+		if (GetLastContType() == TypeLastCont::ARRAY)
+		{
+			Node* new_node = new Node(std::move(value));
+			node_stack_.emplace(new_node);
+		}
+		return *this;
+	}
+
 	DictItemContext Builder::StartDict()
 	{
 		//std::cout << "StartDict " << std::endl; // для отладки
@@ -208,7 +354,7 @@ namespace json
 
 		return *this;
 	}
-	
+
 	Node& Builder::Build()
 	{
 	//	std::cout << "Build " << std::endl; // для отладки
@@ -252,6 +398,8 @@ namespace json
 		return TypeLastCont::NONE;
 	}
 
+
+
 	ArrayItemContext KeyItemContext::StartArray()
 	{
 		return builder_.StartArray();
@@ -262,10 +410,19 @@ namespace json
 		return builder_.StartDict();
 	}
 
+
+
 	KeyItemContext DictItemContext::Key(std::string key)
 	{
 		return builder_.Key(key);
 	}
+
+	Builder& DictItemContext::EndDict()
+	{
+		return builder_.EndDict();
+	}
+
+
 
 	Builder& ArrayItemContext::EndArray()
 	{
@@ -281,25 +438,36 @@ namespace json
 	{
 		return builder_.StartDict();
 	}
-	Builder& ValueItemContextAfterArray::EndArray()
-	{
-		return builder_.EndArray();
-	}
-	ArrayItemContext ValueItemContextAfterArray::StartArray()
-	{
-		return builder_.StartArray();
-	}
-	DictItemContext ValueItemContextAfterArray::StartDict()
-	{
-		builder_.StartDict();
-		return DictItemContext(builder_);
-	}
+
+
+
 	Builder& ValueItemContextAfterKey::EndDict()
 	{
 		return builder_.EndDict();
 	}
+
 	KeyItemContext ValueItemContextAfterKey::Key(std::string key)
 	{
 		return builder_.Key(key);
+	}
+
+
+
+	ValueItemContextAfterKey KeyItemContext::Value(std::string value)
+	{
+		builder_.Value(value);
+		return ValueItemContextAfterKey(builder_);
+	}
+
+	ValueItemContextAfterKey KeyItemContext::Value(int value)
+	{
+		builder_.Value(value);
+		return ValueItemContextAfterKey(builder_);
+	}
+
+	ValueItemContextAfterKey KeyItemContext::Value(double value)
+	{
+		builder_.Value(value);
+		return ValueItemContextAfterKey(builder_);
 	}
 }
