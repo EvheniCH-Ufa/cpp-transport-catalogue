@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <algorithm>
 #include <deque>
@@ -48,7 +48,7 @@ namespace Transport
 			void AddBus(const std::string& bus_name, const std::vector<std::string_view>& stops_names, bool is_roundtrip);
 			void AddStop(const std::string& stop_name, geo::Coordinates coordinates); //name + shirota + dolgota
 			const Bus* GetBus(std::string_view bus_name) const;
-			const Stop* GetStop(std::string_view stop_name) const;
+			Stop* GetStop(std::string_view stop_name) const;
 			void AddDistBetweenStops(std::string_view stop_from, std::string_view stop_to, int length);
 			int GetDistBetweenStops(const std::string& stop_from, const std::string& stop_to) const;
 

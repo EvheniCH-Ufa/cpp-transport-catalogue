@@ -1,4 +1,4 @@
-// p10_01_15_TransportnyjSpravochnik_VizualizacijaKartyMarshrutov.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
+﻿// p12_04_07_TransportSpravoch_PoderzkaMarsh_v.cpp
 
 #include <iostream>
 #include <string>
@@ -6,13 +6,17 @@
 
 
 #include "json_reader.h"
-//#include "transport_catalogue.h"
-
 
 int main() {
     Transport::Data::TransportCatalogue catalogue;
-    Transport::InputCataloge::Test(std::cin, catalogue);
+
+    //auto in_file = std::ifstream("З_1.json"); // pri razrabotke
+
+    Transport::JsonReader json_reader(catalogue); // ++++
+   // json_reader.ReadJson(in_file);                // pri razrabotke
+
+    json_reader.ReadJson(std::cin);         // pri sdache  
+
+   // std::cout << "end";                          // pri razrabotke
 
 }
-
-   

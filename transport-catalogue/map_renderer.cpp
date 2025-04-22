@@ -1,4 +1,4 @@
-#include "map_renderer.h"
+﻿#include "map_renderer.h"
 
 /*
  * В этом файле вы можете разместить код, отвечающий за визуализацию карты маршрутов в формате SVG.
@@ -90,8 +90,33 @@ namespace map_render {
             svg::Polyline route;
 
             const auto [first_point, last_point] = MakeBusRoute(route, *bus);
+
+        /*    point_coords.reserve(bus->stops.size() * (bus->is_roundtrip ? 1 : 2));
+            for (const auto& stop : bus->stops)
+            {
+                svg::Point point = sphere_projector_(stop->coordinates);
+                point_coords.push_back(point);
+                route.AddPoint(point);
+            }
+            if (!bus->is_roundtrip && point_coords.size() >= 2)
+            {
+                for (int i = point_coords.size() - 2; i >= 0; --i)
+                {
+                    route.AddPoint(point_coords[i]);
+                }
+            }*/
+
+
+
             const auto color = settings_.COLOR_PALETTE[color_line_index % settings_.COLOR_PALETTE.size()];
             SetBusRouteSettings(route, color);
+
+            /*route.SetStrokeColor(color);
+            route.SetStrokeWidth(settings_.LINE_WIDTH);
+            route.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
+            route.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
+            route.SetFillColor(svg::NoneColor);*/
+
 
             {
                 auto [label_back, label] = MakeBusLabel(settings_, color, first_point, bus->name);
@@ -175,6 +200,10 @@ namespace map_render {
             svg::Circle stop_place;
             SetStopProperty(stop_place, stop_centre);
 
+            /*            stop_place.SetCenter(point);
+            stop_place.SetRadius(settings_.STOP_RADIUS);
+            stop_place.SetFillColor("white");            */
+           
             document.Add(stop_place);
 
             auto [label_back, label] = MakeStopLabel(settings_, stop_centre, stop->name);

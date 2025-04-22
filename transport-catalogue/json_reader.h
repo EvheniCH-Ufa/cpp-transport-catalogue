@@ -10,6 +10,7 @@
 #include "geo.h"
 #include "json_builder.h"
 #include "transport_catalogue.h"
+#include "transport_router.h"
 #include "map_renderer.h"
 
 namespace Transport
@@ -40,9 +41,16 @@ namespace Transport
         std::vector<CommandDescription> commands_;
         Transport::Data::TransportCatalogue& catalogue_;
 
+        Router::RoutingSettings routing_settings_;
+       // Router::TransportRouter transport_router_;
+
         void ApplyInsertJSONCommands(const json::Node& insert_array);
         json::Document ApplyStatJSONCommandsBuild(const json::Node& stat_array, const svg::Document& svg_document);
 
         map_render::RenderSettings ApplySettingsJSON(const json::Node& settings_array);
+
+        // HOBOE for TransportRouter
+        void ApplyRoutingSettingsJSON(const json::Node & routing_settings_array);
+        void MakeRouteRequest(const json::Node& request, json::ArrayItemContext & result_array, const Router::TransportRouter& router) const;
     };
 } // namespace Transport

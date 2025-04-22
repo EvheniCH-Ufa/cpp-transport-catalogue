@@ -4,6 +4,7 @@
 #include <cassert>
 #include <iostream>
 #include <iterator>
+#include <string>
 #include <fstream>
 #include <sstream>
 
@@ -53,6 +54,7 @@ namespace Transport
             }
         }
 
+
         json::Document JsonReader::ApplyStatJSONCommandsBuild(const json::Node& stat_array, const svg::Document& svg_document)
         {
             {
@@ -61,10 +63,16 @@ namespace Transport
                 json::ArrayItemContext build_array_item_context = builder.StartArray();
                 json::Array result_aray;
 
+                const auto transport_router = Router::TransportRouter(catalogue_, routing_settings_);
                 for (const auto& node /*map_Ы*/ : stat_array.AsArray())
                 {
-
                     std::string command = node.AsMap().at("type").AsString();
+
+                    if (command == "Route") {
+                        MakeRouteRequest(node, build_array_item_context, transport_router);
+                        continue;
+                    }
+
                     if (command == "Map")
                     {
                         // тут фактически МАП с двумя записями: {"map" + сама карта} ,  {"request_id" + id }
@@ -82,12 +90,12 @@ namespace Transport
                     if (command == "Stop")
                     {
                         auto current_map_builder = build_array_item_context.StartDict();
-                            
+
                         current_map_builder.Key("request_id").Value(node.AsMap().at("id").AsInt());
                         const auto stop = catalogue_.GetStop(node.AsMap().at("name").AsString());
                         if (stop == nullptr)
                         {
-                            current_map_builder.Key("error_message").Value("not found"); 
+                            current_map_builder.Key("error_message").Value("not found");
                         }
                         else
                         {
@@ -138,8 +146,7 @@ namespace Transport
                 return json::Document(build_array_item_context.EndArray().Build());
             }
         }
-
-         //    using Color = std::variant<std::string, svg::Rgb, svg::Rgba>;
+        //    using Color = std::variant<std::string, svg::Rgb, svg::Rgba>;
          //                                         0           1         2     3       4     5      6
          //  using NodeValue = std::variant<std::nullptr_t, std::string, int, double, bool, Array, Dict>;
         svg::Color ReadColor(const json::Node& color)
@@ -205,6 +212,57 @@ namespace Transport
              return result;
         }
 
+        void JsonReader::MakeRouteRequest(const json::Node& request, json::ArrayItemContext & result_array, const Router::TransportRouter& router) const {
+
+            // ооо, очень большой - в отдельную функциию
+            const std::string& from = request.AsMap().at("from").AsString();
+            const std::string& to = request.AsMap().at("to").AsString();
+
+//        xcdfg    Router::TransportRouter router(catalogue_, routing_settings_);
+            catalogue_.GetStop(from);
+            auto route_info = router.FindRoute(catalogue_.GetStop(from), catalogue_.GetStop(to));
+
+            if (!route_info) {
+                result_array.StartDict()
+                            .Key("request_id").Value(request.AsMap().at("id").AsInt())
+                            .Key("error_message").Value("not found")
+                            .EndDict();
+                return;
+            }
+
+            auto items_array = result_array.StartDict().Key("items").StartArray();
+
+            for (const auto& item : route_info->items) {
+                if (std::holds_alternative<Router::WaitItem>(item)) {   //esli variant eto WaitItem
+                    const auto& wait = std::get<Router::WaitItem>(item);
+                    items_array.StartDict()
+                               .Key("stop_name").Value(std::string(wait.stop_name))
+                               .Key("time")     .Value(wait.time)
+                               .Key("type")     .Value("Wait")
+                               .EndDict();
+                }
+                else {
+                    const auto& bus = std::get<Router::BusItem>(item); //esli variant eto BusItem
+                    items_array.StartDict()
+                               .Key("bus")       .Value(std::string(bus.bus_name))
+                               .Key("span_count").Value(bus.span_count)
+                               .Key("time")      .Value(bus.time)
+                               .Key("type")      .Value("Bus")
+                               .EndDict();
+                }
+            }
+            items_array.EndArray()
+                       .Key("request_id").Value(request.AsMap().at("id").AsInt())
+                       .Key("total_time").Value(route_info->total_time)
+                       .EndDict();
+        }
+
+        void JsonReader::ApplyRoutingSettingsJSON(const json::Node& routing_settings_array) {
+            routing_settings_.bus_wait_time = routing_settings_array.AsMap().at("bus_wait_time").AsInt();
+            routing_settings_.bus_velocity = routing_settings_array.AsMap().at("bus_velocity").AsDouble();
+        }
+
+
         void JsonReader::ReadJson(std::istream& input)
         {
             auto json_document = json::Load(input);
@@ -212,17 +270,21 @@ namespace Transport
             ApplyInsertJSONCommands(base_requests);
 
             auto render_requests = json_document.GetRequests("render_settings");
-            map_render::RenderSettings settings = ApplySettingsJSON(render_requests);
+            const map_render::RenderSettings settings = ApplySettingsJSON(render_requests);
 
             svg::Document svg_document;
             map_render::MapRenderer map_renderer(catalogue_, settings);
             map_renderer.RenderToSVGDoc(svg_document);
 
+            const json::Node& rout_sett_node = json_document.GetRequests("routing_settings");
+            ApplyRoutingSettingsJSON(rout_sett_node);
+
             auto stat_requests = json_document.GetRequests("stat_requests");
             auto ansver_array = ApplyStatJSONCommandsBuild(stat_requests, svg_document);
 
-          //  auto out_file = std::ofstream("my out.txt"); // для отладки
-          //  json::Print(ansver_array, out_file);         // для отладки
-            json::Print(ansver_array, std::cout);
+              auto out_file = std::ofstream("my out.txt"); // для отладки
+              json::Print(ansver_array, out_file);         // для отладки
+
+           // json::Print(ansver_array, std::cout);
         }
 } // namespace Transport

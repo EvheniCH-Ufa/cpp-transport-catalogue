@@ -1,4 +1,4 @@
-#include<unordered_set>
+﻿#include<unordered_set>
 #include<algorithm>
 
 #include "transport_catalogue.h"
@@ -86,7 +86,7 @@ namespace Transport
 			return nullptr;
 		}
 
-		const Stop* TransportCatalogue::GetStop(std::string_view stop_name) const
+		Stop* TransportCatalogue::GetStop(std::string_view stop_name) const
 		{
 			auto it_find = stops_for_find_.find(stop_name);
 			if (it_find != stops_for_find_.end())

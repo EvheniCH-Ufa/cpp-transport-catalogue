@@ -1,6 +1,9 @@
 ﻿#include "json_builder.h"
 #include <cassert>
 
+//#include <iostream>
+// int st_dick = 0; // для отладки
+
 namespace json
 {
 	Builder::Builder()
@@ -169,7 +172,11 @@ namespace json
 			throw std::logic_error("Wrong value!");
 		}
 
+//        std::cout << "st_dick = " << st_dick << std::endl; // otladka
+
 		commands_stack_.emplace(JSONCommands::DICT);
+
+//        ++st_dick;  /*otladka*/
 
 		Dict dict;
 		Node* new_node = new Node(dict);
